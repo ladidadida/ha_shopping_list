@@ -1,0 +1,101 @@
+image: python:3.14
+
+stages:
+  - lint
+  - typecheck
+  - test
+  - build
+  - publish
+
+cache:
+  paths:
+    - .cache/pip
+    - .venv/
+
+before_script:
+  - apt-get update && apt-get install -y npm
+  - npm install -g pyright
+  - pip install uv
+  - uv sync
+
+# Linting with ruff
+lint:ruff:
+  include:
+    - local: .gitlab/generated.gitlab-ci.yml
+
+  variables:
+    UV_CACHE_DIR: .cache/uv
+
+  stages:
+    - lint
+    - test
+    - build
+
+  # ── Reusable setup template ─────────────────────────────────────────────────
+
+  .uv_dev:
+    image: python:3.14
+    cache:
+      key:
+        files:
+          - uv.lock
+          - pyproject.toml
+        prefix: uv-3.14
+      paths:
+        - .cache/uv/
+        - .venv/
+    before_script:
+      - pip install uv bam-tool
+      - uv sync --dev --frozen
+
+  # ── Lint ────────────────────────────────────────────────────────────────────
+
+  lint:
+    extends:
+      - .lint
+      - .uv_dev
+    stage: lint
+
+  format-check:
+    extends:
+      - .format-check
+      - .uv_dev
+    stage: lint
+
+  typecheck:
+    extends:
+      - .typecheck
+      - .uv_dev
+    stage: lint
+
+  # ── Test ────────────────────────────────────────────────────────────────────
+
+  test-unit:
+    extends:
+      - .test-unit
+      - .uv_dev
+    stage: test
+
+  test-integration:
+    extends:
+      - .test-integration
+      - .uv_dev
+    stage: test
+
+  test-component:
+    extends:
+      - .test-component
+      - .uv_dev
+    stage: test
+
+  # ── Build ───────────────────────────────────────────────────────────────────
+
+  build:
+    extends:
+      - .build
+      - .uv_dev
+    stage: build
+    artifacts:
+      paths:
+        - dist/
+      expire_in: 7 days

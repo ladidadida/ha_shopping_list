@@ -1,0 +1,114 @@
+version: 1
+
+cache:
+  local:
+    enabled: true
+    path: .bam/cache
+
+tasks:
+  # ── Static checks ────────────────────────────────────────────────────────────
+
+  lint:
+    command: uv run ruff check src tests
+    stage: lint
+    inputs:
+      - "src/**/*.py"
+      - "tests/**/*.py"
+      - pyproject.toml
+
+  format:
+    command: uv run ruff format src tests
+    inputs:
+      - "src/**/*.py"
+      - "tests/**/*.py"
+      - pyproject.toml
+
+  format-check:
+    command: uv run ruff format --check src tests
+    stage: lint
+    inputs:
+      - "src/**/*.py"
+      - "tests/**/*.py"
+      - pyproject.toml
+
+  typecheck:
+    command: uv run pyright
+    stage: lint
+    inputs:
+      - "src/**/*.py"
+      - pyproject.toml
+
+  # ── Tests ─────────────────────────────────────────────────────────────────────
+
+  test-unit:
+    command: uv run pytest -q tests/unit --junit-xml=.reports/junit-unit.xml
+    stage: test
+    inputs:
+      - "src/**/*.py"
+      - "tests/unit/**/*.py"
+      - "tests/conftest.py"
+      - pyproject.toml
+    outputs:
+      - .reports/junit-unit.xml
+
+  test-integration:
+    command: uv run pytest -q tests/integration --junit-xml=.reports/junit-integration.xml
+    stage: test
+    inputs:
+      - "src/**/*.py"
+      - "tests/integration/**/*.py"
+      - "tests/conftest.py"
+      - pyproject.toml
+    outputs:
+      - .reports/junit-integration.xml
+
+  test-component:
+    command: uv run pytest -q -m component tests/component --junit-xml=.reports/junit-component.xml
+    stage: test
+    inputs:
+      - "src/**/*.py"
+      - "tests/component/**/*.py"
+      - "tests/conftest.py"
+      - pyproject.toml
+    outputs:
+      - .reports/junit-component.xml
+
+  # ── Build ─────────────────────────────────────────────────────────────────────
+
+  build:
+    command: uv run python -m build
+    stage: build
+    inputs:
+      - "src/**/*.py"
+      - pyproject.toml
+      - README.md
+      - LICENSE
+    outputs:
+      - dist/
+    depends_on:
+      - lint
+      - typecheck
+      - test-unit
+      - test-integration
+      - test-component
+
+  # ── Aggregate CI ──────────────────────────────────────────────────────────────
+
+  ci-checks:
+    command: echo "✓ All CI checks passed"
+    stage: build
+    depends_on:
+      - lint
+      - format-check
+      - typecheck
+      - test-unit
+      - test-integration
+      - test-component
+
+ci:
+  provider: gitlab-ci
+  python_version: "3.14"
+  triggers:
+    push:
+      branches: [main]
+    pull_request:
