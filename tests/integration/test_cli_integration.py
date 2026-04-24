@@ -18,7 +18,10 @@ def test_cli_entrypoint() -> None:
         check=False,
     )
     assert result.returncode == 0
-    assert "usage:" in result.stdout.lower() or "A better shopping list for homeassistant" in result.stdout
+    assert (
+        "usage:" in result.stdout.lower()
+        or "A better shopping list for homeassistant" in result.stdout
+    )
 
 
 @pytest.mark.integration
@@ -31,4 +34,7 @@ def test_cli_module_invocation() -> None:
         check=False,
     )
     assert result.returncode == 0
-    assert "usage:" in result.stdout.lower() or "A better shopping list for homeassistant" in result.stdout
+    assert (
+        "usage:" in result.stdout.lower()
+        or "A better shopping list for homeassistant" in result.stdout
+    )

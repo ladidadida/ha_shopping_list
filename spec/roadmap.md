@@ -25,58 +25,56 @@ Current date: 2026-04-22
 
 ---
 
-## Phase 1 – Backend MVP ⬜
+## Phase 1 – Backend MVP ✅
 
 Goal: a fully functional REST API with persistent SQLite storage, tested and type-safe.
 
 ### 1.1 Infrastructure
-- [ ] `pydantic-settings` `Settings` model (DB_PATH, HOST, PORT, LOG_LEVEL)
-- [ ] `database.py` – SQLModel engine + `get_session` dependency
-- [ ] `create_app()` factory in `app.py`
-- [ ] Global exception handlers (404, 422, 500)
-- [ ] Startup event: `create_all` + seed default categories
+- [x] `pydantic-settings` `Settings` model (DB_PATH, HOST, PORT, LOG_LEVEL)
+- [x] `database.py` – SQLModel engine + `get_session` dependency
+- [x] `create_app()` factory in `app.py`
+- [x] Global exception handlers (404, 422, 500)
+- [x] Startup event: `create_all` + seed default categories
 
 ### 1.2 Data Models
-- [ ] `models/category.py` – `CategoryDB`, `CategoryCreate`, `CategoryRead`
-- [ ] `models/item.py` – `ItemDB`, `ItemCreate`, `ItemUpdate`, `ItemRead`
+- [x] `models/category.py` – `CategoryDB`, `CategoryCreate`, `CategoryRead`
+- [x] `models/item.py` – `ItemDB`, `ItemCreate`, `ItemUpdate`, `ItemRead`
 
 ### 1.3 Services
-- [ ] `services/categories.py` – list, create, delete
-- [ ] `services/items.py` – list (with optional `checked` filter), create, partial update, delete, bulk-delete checked
+- [x] `services/categories.py` – list, create, delete
+- [x] `services/items.py` – list (with optional `checked` filter), create, partial update, delete, bulk-delete checked
 
 ### 1.4 Routers
-- [ ] `routers/categories.py` – `GET /api/v1/categories`, `POST`, `DELETE /{id}`
-- [ ] `routers/items.py` – `GET /api/v1/items`, `POST`, `PATCH /{id}`, `DELETE /{id}`, `DELETE ?checked=true`
+- [x] `routers/categories.py` – `GET /api/v1/categories`, `POST`, `DELETE /{id}`
+- [x] `routers/items.py` – `GET /api/v1/items`, `POST`, `PATCH /{id}`, `DELETE /{id}`, `DELETE ?checked=true`
 
 ### 1.5 CLI integration
-- [ ] `cli.py` extended to start `uvicorn` with settings from env / flags
+- [x] `cli.py` extended to start `uvicorn` with settings from env / flags
 
 ### 1.6 Tests (Backend)
-- [ ] Unit tests for all service functions (mocked session)
-- [ ] Integration tests for all routes (TestClient + tmp SQLite)
-- [ ] ≥ 85 % coverage on `src/`
-
-**Exit criteria:** `bam` passes green; `curl /api/v1/items` returns `[]` from a running instance.
+- [x] Unit tests for all service functions (mocked session)
+- [x] Integration tests for all routes (TestClient + tmp SQLite)
+- [x] ≥ 85 % coverage on `src/`
 
 ---
 
-## Phase 2 – Frontend MVP ⬜
+## Phase 2 – Frontend MVP ✅
 
 Goal: a usable React SPA that covers all MVP user stories.
 
 ### 2.1 Project setup
-- [ ] `frontend/` Vite + React 19 + TypeScript scaffold
-- [ ] Tailwind CSS configured
-- [ ] TanStack Query v5 + React Router v7 installed
-- [ ] API client module with dynamic `ingress-path` base URL
+- [x] `frontend/` Vite + React 19 + TypeScript scaffold
+- [x] Tailwind CSS v4 configured
+- [x] TanStack Query v5 + React Router v7 installed
+- [x] API client module with dynamic `ingress-path` base URL
 
 ### 2.2 Features
-- [ ] Add item form (name, optional quantity, optional category)
-- [ ] Item list grouped by category, sorted by `sort_order`
-- [ ] Check / uncheck item (optimistic update)
-- [ ] Delete single item
-- [ ] "Clear checked" bulk action
-- [ ] Category management drawer (create, delete)
+- [x] Add item form (name, optional quantity, optional category)
+- [x] Item list grouped by category, sorted by `sort_order`
+- [x] Check / uncheck item (optimistic update)
+- [x] Delete single item
+- [x] "Clear checked" bulk action
+- [x] Category management drawer (create, delete)
 
 ### 2.3 UX / Accessibility
 - [ ] Mobile-first responsive layout
@@ -88,16 +86,16 @@ Goal: a usable React SPA that covers all MVP user stories.
 
 ---
 
-## Phase 3 – HA Add-on Packaging ⬜
+## Phase 3 – HA Add-on Packaging ✅
 
 Goal: installable and runnable as a local HA add-on.
 
-- [ ] `ha-addon/config.yaml` (ingress, panel_icon, panel_title, arch list)
-- [ ] `ha-addon/build.yaml` (arch-specific HA Python base images)
-- [ ] `ha-addon/run.sh` with `bashio` logging
-- [ ] Multi-stage `Dockerfile` (Node build → HA runtime)
-- [ ] Ingress-path injection middleware (reads `X-Ingress-Path`, patches `index.html`)
-- [ ] SQLite file created at `/data/shoppinglist.db` with `600` permissions
+- [x] `ha-addon/config.yaml` (ingress, panel_icon, panel_title, arch list)
+- [x] `ha-addon/build.yaml` (arch-specific HA Python base images)
+- [x] `ha-addon/run.sh` with `bashio` logging
+- [x] Multi-stage `Dockerfile` (Node build → HA runtime)
+- [x] Ingress-path injection middleware (reads `X-Ingress-Path`, patches `index.html`)
+- [x] SQLite file created at `/data/shoppinglist.db` with `600` permissions
 - [ ] Manual smoke-test on a real HA instance (amd64)
 
 **Exit criteria:** Add-on appears in HA sidebar, list is editable, data survives container restart.

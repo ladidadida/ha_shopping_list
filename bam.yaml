@@ -105,6 +105,12 @@ tasks:
       - test-integration
       - test-component
 
+  # ── Development server ────────────────────────────────────────────────────────
+
+  serve:
+    command: uv run python -m ha_shopping_list --host 127.0.0.1 --port 8099 --db-path /tmp/ha-shopping-list-dev.db --log-level debug
+    interactive: true
+
 ci:
   provider: gitlab-ci
   python_version: "3.14"
