@@ -66,11 +66,11 @@ export default function App() {
             )}
             <button
               onClick={() => setCategoryDrawerOpen(true)}
-              aria-label="Kategorien verwalten"
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
-              title="Kategorien"
+              className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors px-2 py-1 rounded-lg hover:bg-gray-50"
+              title="Kategorien verwalten"
             >
-              ☰
+              🏷️ Kategorien
+              <span className="text-xs text-gray-400 font-normal ml-0.5">▾</span>
             </button>
           </div>
         </div>

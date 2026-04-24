@@ -12,6 +12,7 @@ import {
   updateItem,
   type CategoryCreate,
   type ItemCreate,
+  type ItemUpdate,
   type ShoppingListCreate,
 } from '../api/client'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -93,6 +94,15 @@ export function useToggleItem(listId?: number) {
   return useMutation({
     mutationFn: ({ id, checked }: { id: number; checked: boolean }) =>
       updateItem(id, { checked }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ITEMS_KEY(listId) }),
+  })
+}
+
+export function useUpdateItem(listId?: number) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: ItemUpdate }) =>
+      updateItem(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ITEMS_KEY(listId) }),
   })
 }
