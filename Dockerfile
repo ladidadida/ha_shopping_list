@@ -44,9 +44,7 @@ ENV PATH="/app/.venv/bin:$PATH"
 COPY --from=frontend-builder /build/frontend/dist ./frontend/dist
 
 # Copy the add-on entrypoint
-COPY ha-addon/run.sh /run.sh
+COPY run.sh /run.sh
 RUN chmod a+x /run.sh
-
-CMD ["/run.sh"]
 
 CMD ["/run.sh"]
