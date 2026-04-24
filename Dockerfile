@@ -1,23 +1,26 @@
-# Stage 1 – Build the React frontend
+# Stage 1 – Frontend: build the React/Vite app
 FROM node:22-alpine AS frontend-builder
-
 WORKDIR /build/frontend
-
-# Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
-
-# Copy package manifests first for layer caching
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
-
 RUN pnpm install --frozen-lockfile
-
-# Copy the rest of the frontend source and build
 COPY frontend/ .
 RUN pnpm run build
 
-# ──────────────────────────────────────────────────────────────
-# Stage 2 – Runtime image (HA base with Python 3.14, multi-arch manifest)
-FROM ghcr.io/home-assistant/base-python:3.14
+# Stage 2 – Backend: install into a venv as a proper wheel
+# .git is copied so hatch-vcs can resolve the version from git tags.
+FROM ghcr.io/astral-sh/uv:python3.13-alpine AS backend-builder
+RUN apk add --no-cache git
+WORKDIR /app
+COPY pyproject.toml uv.lock README.md ./
+COPY src/ ./src/
+COPY .git/ ./.git/
+# Bundle the compiled frontend into the package so it is included in the wheel.
+COPY --from=frontend-builder /build/frontend/dist ./src/ha_shopping_list/frontend/dist/
+RUN uv sync --no-dev --frozen --no-editable
+
+# Stage 3 – Release: HA base image with only runtime artefacts
+FROM ghcr.io/home-assistant/base-python:3.13-alpine3.23
 
 LABEL \
     io.hass.name="Shopping List" \
@@ -25,25 +28,11 @@ LABEL \
     io.hass.type="addon" \
     io.hass.version="0.1.0"
 
-# Install uv for fast, reproducible installs
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-
 WORKDIR /app
 
-# Copy Python project files
-COPY pyproject.toml uv.lock README.md ./
-COPY src/ ./src/
-
-# Install the Python package (no dev deps, no editable mode)
-RUN uv sync --no-dev --frozen
-
-# Make the venv's binaries available without explicit activation
+COPY --from=backend-builder /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Copy the compiled frontend into the well-known location expected by app.py
-COPY --from=frontend-builder /build/frontend/dist ./frontend/dist
-
-# Copy the add-on entrypoint
 COPY run.sh /run.sh
 RUN chmod a+x /run.sh
 

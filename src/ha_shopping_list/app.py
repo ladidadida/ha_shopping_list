@@ -161,7 +161,11 @@ def create_app() -> FastAPI:
     app.include_router(shopping_lists.router, prefix="/api/v1")
 
     # Serve the React SPA when the build artefact is present.
-    dist_dir = Path(__file__).parent.parent.parent / "frontend" / "dist"
+    # Non-editable installs (Docker): frontend is bundled inside the package.
+    # Editable/dev installs: frontend is built at the project root.
+    dist_dir = Path(__file__).parent / "frontend" / "dist"
+    if not dist_dir.is_dir():
+        dist_dir = Path(__file__).parent.parent.parent / "frontend" / "dist"
     index_html = dist_dir / "index.html"
 
     if dist_dir.is_dir() and index_html.is_file():

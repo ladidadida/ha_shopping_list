@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 
@@ -44,4 +45,4 @@ def test_cli_version() -> None:
         check=False,
     )
     assert result.returncode == 0
-    assert "0.1.0" in result.stdout
+    assert re.search(r"\d+\.\d+\.\d+", result.stdout), f"No version in output: {result.stdout!r}"
