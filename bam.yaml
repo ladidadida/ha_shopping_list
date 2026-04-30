@@ -126,8 +126,17 @@ tasks:
     interactive: true
 
 ci:
-  provider: gitlab-ci
+  provider: github-actions
   python_version: "3.13"
+  exclude:
+    - format
+    - serve
+    - docker-serve
+    - ci-checks
+  triggers:
+    push:
+      branches: [main]
+    pull_request:
   triggers:
     push:
       branches: [main]
