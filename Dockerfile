@@ -20,7 +20,8 @@ COPY --from=frontend-builder /build/frontend/dist ./src/ha_shopping_list/fronten
 RUN uv sync --no-dev --frozen --no-editable
 
 # Stage 3 – Release: HA base image with only runtime artefacts
-FROM ghcr.io/home-assistant/base-python:3.13-alpine3.23
+ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base-python:3.13-alpine3.23
+FROM ${BUILD_FROM}
 
 ARG BUILD_VERSION=unknown
 LABEL \

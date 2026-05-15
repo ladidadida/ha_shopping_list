@@ -12,6 +12,19 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            build_from: ghcr.io/home-assistant/amd64-base-python:3.13-alpine3.23
+          - arch: aarch64
+            platform: linux/arm64
+            build_from: ghcr.io/home-assistant/aarch64-base-python:3.13-alpine3.23
+          - arch: armv7
+            platform: linux/arm/v7
+            build_from: ghcr.io/home-assistant/armv7-base-python:3.13-alpine3.23
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,12 +52,13 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: ${{ matrix.platform }}
           push: true
           build-args: |
+            BUILD_FROM=${{ matrix.build_from }}
             BUILD_VERSION=${{ steps.version.outputs.version }}
           tags: |
-            ghcr.io/ladidadida/ha_shopping_list:${{ steps.version.outputs.version }}
-            ghcr.io/ladidadida/ha_shopping_list:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ghcr.io/ladidadida/ha_shopping_list/${{ matrix.arch }}:${{ steps.version.outputs.version }}
+            ghcr.io/ladidadida/ha_shopping_list/${{ matrix.arch }}:latest
+          cache-from: type=gha,scope=${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
