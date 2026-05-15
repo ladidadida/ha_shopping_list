@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 import type { Item } from '../api/client'
 import { useCategories, useDeleteItem, useToggleItem, useUpdateItem } from '../hooks/useShoppingList'
 
+const LONG_PRESS_MS = 500
+
 interface Props {
   item: Item
   listId: number | undefined
@@ -18,6 +20,8 @@ export default function ItemRow({ item, listId }: Props) {
   const [editQuantity, setEditQuantity] = useState(item.quantity ?? '')
   const [editCategoryId, setEditCategoryId] = useState<number | null>(item.category_id)
   const nameRef = useRef<HTMLInputElement>(null)
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const didLongPress = useRef(false)
 
   function startEdit() {
     setEditName(item.name)
@@ -25,6 +29,31 @@ export default function ItemRow({ item, listId }: Props) {
     setEditCategoryId(item.category_id)
     setEditing(true)
     setTimeout(() => nameRef.current?.focus(), 0)
+  }
+
+  function handlePointerDown(e: React.PointerEvent) {
+    // Only handle touch/pen; mouse clicks use the desktop hover buttons
+    if (e.pointerType === 'mouse') return
+    didLongPress.current = false
+    longPressTimer.current = setTimeout(() => {
+      didLongPress.current = true
+      startEdit()
+    }, LONG_PRESS_MS)
+  }
+
+  function cancelLongPress() {
+    if (longPressTimer.current !== null) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }
+
+  function handlePointerUp(e: React.PointerEvent) {
+    if (e.pointerType === 'mouse') return
+    cancelLongPress()
+    if (!didLongPress.current) {
+      toggle.mutate({ id: item.id, checked: !item.checked })
+    }
   }
 
   function handleSave(e: React.FormEvent) {
@@ -76,21 +105,31 @@ export default function ItemRow({ item, listId }: Props) {
               ))}
             </select>
           )}
-          <div className="flex gap-2 justify-end">
+          <div className="flex gap-2 justify-between">
             <button
               type="button"
-              onClick={() => setEditing(false)}
-              className="px-3 py-1.5 rounded-lg text-gray-400 hover:text-gray-600 text-sm transition-colors"
+              onClick={() => { setEditing(false); remove.mutate(item.id) }}
+              disabled={remove.isPending}
+              className="px-3 py-1.5 rounded-lg text-red-400 hover:text-red-600 text-sm transition-colors disabled:opacity-50"
             >
-              Abbrechen
+              Löschen
             </button>
-            <button
-              type="submit"
-              disabled={update.isPending || !editName.trim()}
-              className="px-4 py-1.5 rounded-lg bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-600 disabled:opacity-50 transition-colors"
-            >
-              {update.isPending ? '…' : 'Speichern'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className="px-3 py-1.5 rounded-lg text-gray-400 hover:text-gray-600 text-sm transition-colors"
+              >
+                Abbrechen
+              </button>
+              <button
+                type="submit"
+                disabled={update.isPending || !editName.trim()}
+                className="px-4 py-1.5 rounded-lg bg-indigo-500 text-white text-sm font-medium hover:bg-indigo-600 disabled:opacity-50 transition-colors"
+              >
+                {update.isPending ? '…' : 'Speichern'}
+              </button>
+            </div>
           </div>
         </form>
       </li>
@@ -106,7 +145,11 @@ export default function ItemRow({ item, listId }: Props) {
         className="w-5 h-5 rounded accent-indigo-500 cursor-pointer flex-shrink-0"
       />
       <span
-        className={`flex-1 text-sm ${item.checked ? 'line-through text-gray-400' : 'text-gray-800'}`}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={cancelLongPress}
+        onPointerCancel={cancelLongPress}
+        className={`flex-1 text-sm select-none touch-none ${item.checked ? 'line-through text-gray-400' : 'text-gray-800'}`}
       >
         {item.name}
         {item.quantity && (
@@ -116,14 +159,14 @@ export default function ItemRow({ item, listId }: Props) {
       <button
         onClick={startEdit}
         aria-label={`${item.name} bearbeiten`}
-        className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-gray-300 hover:text-indigo-400 transition-opacity p-1 rounded"
+        className="opacity-0 group-hover:opacity-100 focus:opacity-100 [@media(hover:none)]:hidden text-gray-300 hover:text-indigo-400 transition-opacity p-1 rounded"
       >
         ✏️
       </button>
       <button
         onClick={() => remove.mutate(item.id)}
         aria-label={`${item.name} löschen`}
-        className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-gray-300 hover:text-red-400 transition-opacity p-1 rounded"
+        className="opacity-0 group-hover:opacity-100 focus:opacity-100 [@media(hover:none)]:hidden text-gray-300 hover:text-red-400 transition-opacity p-1 rounded"
       >
         ✕
       </button>
