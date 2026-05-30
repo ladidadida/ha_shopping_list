@@ -21,9 +21,6 @@ jobs:
           - arch: aarch64
             platform: linux/arm64
             build_from: ghcr.io/home-assistant/aarch64-base-python:3.13-alpine3.22
-          - arch: armv7
-            platform: linux/arm/v7
-            build_from: ghcr.io/home-assistant/armv7-base-python:3.13-alpine3.22
 
     steps:
       - name: Checkout
