@@ -184,7 +184,7 @@ name: Shopping List
 version: "0.1.0"
 slug: ha_shopping_list
 description: A fast, mobile-friendly shopping list.
-url: https://github.com/ladidadida/ha-shopping-list
+url: https://github.com/ladidadida/ladis_list
 arch:
   - aarch64
   - amd64
