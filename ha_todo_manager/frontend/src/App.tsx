@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import AddTodoForm from './components/AddTodoForm'
+import CardDetailPanel from './components/CardDetailPanel'
 import KanbanBoard from './components/KanbanBoard'
 import TagManager from './components/TagManager'
 import { useColumns } from './hooks/useColumns'
@@ -9,9 +11,11 @@ export default function App() {
   const { data: columns = [], isLoading: columnsLoading } = useColumns()
   const { data: tags = [] } = useTags()
   const { data: todos = [], isLoading: todosLoading } = useTodos()
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null)
 
   const loading = columnsLoading || todosLoading
   const sortedColumns = [...columns].sort((a, b) => a.position - b.position)
+  const editingTodo = todos.find((t) => t.id === editingTodoId)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -29,8 +33,24 @@ export default function App() {
 
         {loading && <p className="text-center text-sm text-gray-400 py-4">Laden…</p>}
 
-        {!loading && <KanbanBoard columns={sortedColumns} todos={todos} tags={tags} />}
+        {!loading && (
+          <KanbanBoard
+            columns={sortedColumns}
+            todos={todos}
+            tags={tags}
+            onEdit={setEditingTodoId}
+          />
+        )}
       </main>
+
+      {editingTodo && (
+        <CardDetailPanel
+          todo={editingTodo}
+          columns={sortedColumns}
+          tags={tags}
+          onClose={() => setEditingTodoId(null)}
+        />
+      )}
     </div>
   )
 }

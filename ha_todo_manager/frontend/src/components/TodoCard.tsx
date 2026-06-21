@@ -1,6 +1,6 @@
 import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core'
 import type { Column, Tag, Todo } from '../api/client'
-import { useCompleteTodo, useDeleteTodo, useUpdateTodo } from '../hooks/useTodos'
+import { useCompleteTodo, useDeleteTodo } from '../hooks/useTodos'
 
 const PRIORITY_LABELS = ['', 'Niedrig', 'Mittel', 'Hoch']
 const PRIORITY_COLORS = ['', 'bg-blue-100 text-blue-700', 'bg-amber-100 text-amber-700', 'bg-red-100 text-red-700']
@@ -11,6 +11,7 @@ interface Props {
   tags: Tag[]
   dragHandleAttributes?: DraggableAttributes
   dragHandleListeners?: DraggableSyntheticListeners
+  onEdit?: (id: string) => void
 }
 
 export default function TodoCard({
@@ -19,8 +20,8 @@ export default function TodoCard({
   tags,
   dragHandleAttributes,
   dragHandleListeners,
+  onEdit,
 }: Props) {
-  const update = useUpdateTodo()
   const complete = useCompleteTodo()
   const remove = useDeleteTodo()
 
@@ -72,18 +73,16 @@ export default function TodoCard({
             </span>
           ))}
         </div>
-        <select
-          value={todo.column_id}
-          onChange={(e) => update.mutate({ id: todo.id, data: { column_id: e.target.value } })}
-          className="mt-2 rounded-lg border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400"
-        >
-          {columns.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
       </div>
+      {onEdit && (
+        <button
+          onClick={() => onEdit(todo.id)}
+          aria-label={`${todo.title} bearbeiten`}
+          className="text-gray-300 hover:text-indigo-400 transition-colors p-1 rounded"
+        >
+          ✏️
+        </button>
+      )}
       <button
         onClick={() => remove.mutate(todo.id)}
         aria-label={`${todo.title} löschen`}

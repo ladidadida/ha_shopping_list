@@ -17,9 +17,10 @@ interface Props {
   columns: Column[]
   todos: Todo[]
   tags: Tag[]
+  onEdit: (id: string) => void
 }
 
-export default function KanbanBoard({ columns, todos, tags }: Props) {
+export default function KanbanBoard({ columns, todos, tags, onEdit }: Props) {
   const moveTodo = useMoveTodo()
 
   const sensors = useSensors(
@@ -79,6 +80,7 @@ export default function KanbanBoard({ columns, todos, tags }: Props) {
             todos={todosForColumn(column.id)}
             columns={columns}
             tags={tags}
+            onEdit={onEdit}
           />
         ))}
       </div>

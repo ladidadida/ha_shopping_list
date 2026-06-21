@@ -127,13 +127,16 @@ for manual testing of columns/tags/todos/recurrence sooner.
       replacing the list view — `KanbanBoard` (single `DndContext`, horizontally
       scrollable swimlanes) → `KanbanColumn` (`useDroppable` + `SortableContext`) →
       `SortableTodoCard` (`useSortable` wrapper) → `TodoCard` (stays dnd-kit-agnostic,
-      receives `dragHandleAttributes`/`dragHandleListeners` as props). The `<select>`
-      column-move on the card stays as a keyboard/screen-reader-friendly fallback
-      alongside real drag-and-drop. Reordering updates only the todos whose `position`
-      actually changed via a batched `useMoveTodo` hook (multiple `PATCH`s, one
-      invalidate) — no new backend endpoint needed.
-- [ ] Card detail slide-over (full edit + RRULE builder with presets — currently a
-      plain text input)
+      receives `dragHandleAttributes`/`dragHandleListeners` as props). Reordering
+      updates only the todos whose `position` actually changed via a batched
+      `useMoveTodo` hook (multiple `PATCH`s, one invalidate) — no new backend endpoint
+      needed.
+- [x] Card detail slide-over (`CardDetailPanel`) — full edit: title, description,
+      column, due date, priority, tags, and an RRULE preset picker
+      (`lib/rrule.ts`: täglich/wöchentlich-mit-Wochentagen/monatlich/jährlich/eigene
+      RRULE), opened via a ✏️ button on the card. The card's inline column `<select>`
+      was removed once this and drag-and-drop both covered moving a todo between
+      columns — keeping all three was redundant (user feedback after testing).
 - [ ] Settings page (column management, persons read-only, webhook secret display)
 - [ ] React Router v6 (hash-based) once there's more than one view
 

@@ -8,9 +8,10 @@ interface Props {
   todos: Todo[]
   columns: Column[]
   tags: Tag[]
+  onEdit: (id: string) => void
 }
 
-export default function KanbanColumn({ column, todos, columns, tags }: Props) {
+export default function KanbanColumn({ column, todos, columns, tags, onEdit }: Props) {
   const { setNodeRef } = useDroppable({ id: column.id })
 
   return (
@@ -21,7 +22,7 @@ export default function KanbanColumn({ column, todos, columns, tags }: Props) {
       <SortableContext items={todos.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <ul ref={setNodeRef} className="flex flex-col gap-2 min-h-[3rem]">
           {todos.map((todo) => (
-            <SortableTodoCard key={todo.id} todo={todo} columns={columns} tags={tags} />
+            <SortableTodoCard key={todo.id} todo={todo} columns={columns} tags={tags} onEdit={onEdit} />
           ))}
           {todos.length === 0 && (
             <li className="text-xs text-gray-400 py-3 text-center border border-dashed border-gray-200 rounded-lg">

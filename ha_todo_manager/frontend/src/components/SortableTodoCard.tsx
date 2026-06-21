@@ -7,9 +7,10 @@ interface Props {
   todo: Todo
   columns: Column[]
   tags: Tag[]
+  onEdit: (id: string) => void
 }
 
-export default function SortableTodoCard({ todo, columns, tags }: Props) {
+export default function SortableTodoCard({ todo, columns, tags, onEdit }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: todo.id,
   })
@@ -28,6 +29,7 @@ export default function SortableTodoCard({ todo, columns, tags }: Props) {
         tags={tags}
         dragHandleAttributes={attributes}
         dragHandleListeners={listeners}
+        onEdit={onEdit}
       />
     </li>
   )
