@@ -1,3 +1,4 @@
+import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core'
 import type { Column, Tag, Todo } from '../api/client'
 import { useCompleteTodo, useDeleteTodo, useUpdateTodo } from '../hooks/useTodos'
 
@@ -8,9 +9,17 @@ interface Props {
   todo: Todo
   columns: Column[]
   tags: Tag[]
+  dragHandleAttributes?: DraggableAttributes
+  dragHandleListeners?: DraggableSyntheticListeners
 }
 
-export default function TodoCard({ todo, columns, tags }: Props) {
+export default function TodoCard({
+  todo,
+  columns,
+  tags,
+  dragHandleAttributes,
+  dragHandleListeners,
+}: Props) {
   const update = useUpdateTodo()
   const complete = useCompleteTodo()
   const remove = useDeleteTodo()
@@ -20,7 +29,17 @@ export default function TodoCard({ todo, columns, tags }: Props) {
   const isDone = column?.is_terminal ?? false
 
   return (
-    <li className="flex items-start gap-3 p-3 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div className="flex items-start gap-2 p-3 bg-white rounded-xl shadow-sm border border-gray-100">
+      {dragHandleAttributes && (
+        <button
+          {...dragHandleAttributes}
+          {...dragHandleListeners}
+          aria-label={`${todo.title} verschieben`}
+          className="mt-0.5 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing p-1 touch-none flex-shrink-0"
+        >
+          ⠿
+        </button>
+      )}
       <button
         onClick={() => complete.mutate(todo.id)}
         disabled={complete.isPending || isDone}
@@ -72,6 +91,6 @@ export default function TodoCard({ todo, columns, tags }: Props) {
       >
         ✕
       </button>
-    </li>
+    </div>
   )
 }

@@ -123,19 +123,34 @@ for manual testing of columns/tags/todos/recurrence sooner.
       multi-select)
 - [x] `TagManager` — minimal inline create/delete, standing in for the full Settings
       page for now
-- [ ] Kanban board (swimlanes, drag-and-drop via `@dnd-kit/core` + `@dnd-kit/sortable`)
-      — deferred; the `<select>`-based column move is the stand-in
+- [x] Kanban board (swimlanes, drag-and-drop via `@dnd-kit/core` + `@dnd-kit/sortable`),
+      replacing the list view — `KanbanBoard` (single `DndContext`, horizontally
+      scrollable swimlanes) → `KanbanColumn` (`useDroppable` + `SortableContext`) →
+      `SortableTodoCard` (`useSortable` wrapper) → `TodoCard` (stays dnd-kit-agnostic,
+      receives `dragHandleAttributes`/`dragHandleListeners` as props). The `<select>`
+      column-move on the card stays as a keyboard/screen-reader-friendly fallback
+      alongside real drag-and-drop. Reordering updates only the todos whose `position`
+      actually changed via a batched `useMoveTodo` hook (multiple `PATCH`s, one
+      invalidate) — no new backend endpoint needed.
 - [ ] Card detail slide-over (full edit + RRULE builder with presets — currently a
       plain text input)
 - [ ] Settings page (column management, persons read-only, webhook secret display)
 - [ ] React Router v6 (hash-based) once there's more than one view
 
-**Found during manual check:** creating a todo with `rrule` failed with
-`sqlite3.OperationalError: table todo has no column named rrule` — not a code bug, the
-local dev DB at `/tmp/ha-todo-manager-dev.db` predated the Phase 2 schema changes
-(`SQLModel.metadata.create_all()` only creates missing tables, it doesn't alter
+**Found during manual check (list-view iteration):** creating a todo with `rrule`
+failed with `sqlite3.OperationalError: table todo has no column named rrule` — not a
+code bug, the local dev DB at `/tmp/ha-todo-manager-dev.db` predated the Phase 2 schema
+changes (`SQLModel.metadata.create_all()` only creates missing tables, it doesn't alter
 existing ones). Fixed by deleting the stale dev DB file. No migration tooling added —
 not warranted pre-release with no real data to preserve.
+
+**Found during manual check (Kanban iteration):** after rebuilding the frontend, the
+browser still loaded old (now-deleted) JS/CSS asset hashes and showed a blank page. Not
+a code bug — an earlier `bam serve` process from the previous iteration was never
+actually killed (`pkill` had silently missed it), so it kept holding port 8100; a
+second `bam serve` start failed to bind and exited, while the stale process kept
+serving the old build. Fixed by `kill -9`-ing the stale PID (verified via `ss -tlnp`)
+and starting a genuinely fresh process.
 
 **Exit criteria:** All v1 user stories from `AGENTS.md` completable in the browser
 without console errors on a mobile viewport.

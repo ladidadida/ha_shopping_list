@@ -1,5 +1,5 @@
 import AddTodoForm from './components/AddTodoForm'
-import ColumnSection from './components/ColumnSection'
+import KanbanBoard from './components/KanbanBoard'
 import TagManager from './components/TagManager'
 import { useColumns } from './hooks/useColumns'
 import { useTags } from './hooks/useTags'
@@ -16,27 +16,20 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="sticky top-0 z-10 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-lg mx-auto flex items-center px-4 py-3">
+        <div className="max-w-6xl mx-auto flex items-center px-4 py-3">
           <h1 className="text-lg font-bold text-gray-800">✅ Todo Manager</h1>
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 pb-8 pt-4 flex flex-col gap-4">
-        <AddTodoForm columns={sortedColumns} tags={tags} />
-        <TagManager />
+      <main className="max-w-6xl mx-auto px-4 pb-8 pt-4 flex flex-col gap-4">
+        <div className="max-w-lg flex flex-col gap-4">
+          <AddTodoForm columns={sortedColumns} tags={tags} />
+          <TagManager />
+        </div>
 
         {loading && <p className="text-center text-sm text-gray-400 py-4">Laden…</p>}
 
-        {!loading &&
-          sortedColumns.map((column) => (
-            <ColumnSection
-              key={column.id}
-              column={column}
-              todos={todos.filter((t) => t.column_id === column.id)}
-              columns={sortedColumns}
-              tags={tags}
-            />
-          ))}
+        {!loading && <KanbanBoard columns={sortedColumns} todos={todos} tags={tags} />}
       </main>
     </div>
   )

@@ -46,3 +46,15 @@ export function useDeleteTodo() {
     onSuccess: () => qc.invalidateQueries({ queryKey: TODOS_KEY }),
   })
 }
+
+// Batches multiple position/column updates from a single Kanban drag-end into one
+// mutation, so the todos query is only invalidated once.
+export function useMoveTodo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (updates: { id: string; data: TodoUpdate }[]) => {
+      await Promise.all(updates.map(({ id, data }) => updateTodo(id, data)))
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: TODOS_KEY }),
+  })
+}
