@@ -61,13 +61,33 @@ API; columns and tags are manageable. No assignees, no recurrence, no webhook ye
 
 ---
 
-## Phase 2 – Recurrence ⬜
+## Phase 2 – Recurrence ✅
 
-- [ ] `services/recurrence.py` – pure RRULE functions (no DB access), unit-tested
-- [ ] `scheduler.py` – asyncio periodic task registered in `app.py`'s lifespan
-- [ ] `routers/recurrence.py` – `POST /api/recurrence/materialise`
-- [ ] `POST /api/todos/{id}/complete` wired to trigger materialisation when `rrule` is set
-- [ ] `materialise_interval_minutes` config option actually wired into the scheduler
+- [x] `services/recurrence.py` – pure RRULE functions (no DB access), unit-tested
+- [x] `scheduler.py` – asyncio periodic task registered in `app.py`'s lifespan
+- [x] `routers/recurrence.py` – `POST /api/recurrence/materialise`
+- [x] `POST /api/todos/{id}/complete` wired to trigger materialisation when `rrule` is set
+- [x] `materialise_interval_minutes` config option actually wired into the scheduler
+
+**Gap-fill decisions** (design didn't spell these out, same pattern as Phase 1's
+`tag_ids` note):
+- RRULE `dtstart` anchor = the root todo's `created_at.date()` (no separate "series
+  start date" field exists).
+- `/complete`-triggered materialisation is **not** date-gated (always spawns the next
+  occurrence); the periodic/manual sweep **is** gated by `next_due <= today` (that's
+  the "stale container catches up" case).
+- Assignee/source/source_ref are not copied when materialising — they don't exist yet
+  (Phase 3). Tags are copied.
+- `POST /api/recurrence/materialise` returns `{"materialised": <count>}`.
+- Invalid RRULE strings → `422`.
+
+**Bug found during manual check and fixed in the same iteration:** `_IngressPathMiddleware`
+(added for the Phase 0 SPA-serving fix) intercepted *any* `text/html` response and
+replaced it with `index.html` — including FastAPI's own `/docs` and `/redoc`. Fixed by
+excluding `/api`, `/docs`, `/redoc`, `/openapi.json` from the middleware. Regression
+test added in `tests/integration/test_root.py`. Worth checking whether
+`ha_shopping_list/app.py` has the same latent bug (same code, copied 1:1) — not fixed
+here, out of scope for this iteration.
 
 **Exit criteria:** Completing a recurring todo creates the next instance; a stale
 container catches up on overdue recurrences on startup.

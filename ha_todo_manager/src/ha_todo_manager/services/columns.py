@@ -17,6 +17,14 @@ def list_columns(session: Session) -> list[ColumnDB]:
     return list(session.exec(select(ColumnDB).order_by(ColumnDB.position)).all())  # type: ignore[arg-type]
 
 
+def first_non_terminal_column(session: Session) -> ColumnDB | None:
+    return session.exec(
+        select(ColumnDB)
+        .where(ColumnDB.is_terminal == False)  # noqa: E712
+        .order_by(ColumnDB.position)  # type: ignore[arg-type]
+    ).first()
+
+
 def create_column(session: Session, data: ColumnCreate) -> ColumnDB:
     column = ColumnDB.model_validate(data)
     session.add(column)

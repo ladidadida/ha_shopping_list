@@ -16,10 +16,12 @@ prose.
 ## Status
 
 v1 design finalized (this document); implementation is being built incrementally.
-Phases 0–1 are done: packaging, a working REST API for columns/tags/todos (CRUD,
-default columns seeded on start, plain column-move `/complete`). Recurrence, HA
-person sync, the webhook endpoint, assignees, and all frontend views are **not
-implemented yet** — follow `spec/roadmap.md` for build order and current status.
+Phases 0–2 are done: packaging, a working REST API for columns/tags/todos (CRUD,
+default columns seeded on start), and RRULE-based recurrence (`/complete` spawns the
+next occurrence for recurring root todos; periodic + manual sweep catches up on
+overdue ones). HA person sync, the webhook endpoint, assignees, and all frontend
+views are **not implemented yet** — follow `spec/roadmap.md` for build order and
+current status.
 
 ## Technology Stack
 

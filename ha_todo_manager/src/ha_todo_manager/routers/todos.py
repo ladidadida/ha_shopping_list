@@ -31,7 +31,10 @@ def get_todos(
 
 @router.post("", response_model=TodoRead, status_code=201)
 def post_todo(data: TodoCreate, session: Session = Depends(get_session)) -> TodoRead:
-    todo = svc.create_todo(session, data)
+    try:
+        todo = svc.create_todo(session, data)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return _to_read(session, todo)
 
 
@@ -49,7 +52,10 @@ def patch_todo(
     data: TodoUpdate,
     session: Session = Depends(get_session),
 ) -> TodoRead:
-    todo = svc.update_todo(session, todo_id, data)
+    try:
+        todo = svc.update_todo(session, todo_id, data)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     if todo is None:
         raise HTTPException(status_code=404, detail="Todo not found")
     return _to_read(session, todo)

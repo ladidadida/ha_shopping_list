@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -14,9 +15,11 @@ from sqlmodel import Session, select
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.types import ASGIApp
 
+from . import scheduler
 from .database import create_db_and_tables, get_engine
 from .models.column import ColumnDB
-from .routers import columns, tags, todos
+from .routers import columns, recurrence, tags, todos
+from .settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +53,12 @@ class _IngressPathMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         response = await call_next(request)
 
-        # Only intercept HTML responses for index.html (SPA fallback routes)
+        # Only intercept the SPA fallback route's HTML — not /api/*, and not
+        # FastAPI's own /docs, /redoc, /openapi.json (those are text/html too, and
+        # without this check they'd get silently replaced with index.html).
+        path = request.url.path
+        if path.startswith(("/api", "/docs", "/redoc", "/openapi.json")):
+            return response
         content_type = response.headers.get("content-type", "")
         if "text/html" not in content_type:
             return response
@@ -85,8 +93,15 @@ def _seed_default_columns() -> None:
 async def _lifespan(app: FastAPI) -> AsyncGenerator[None]:
     create_db_and_tables()
     _seed_default_columns()
+    interval = get_settings().materialise_interval_minutes
+    task = asyncio.create_task(scheduler.run_periodic(interval))
     logger.info("ha-todo-manager started.")
     yield
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
 
 
 def create_app() -> FastAPI:
@@ -103,6 +118,7 @@ def create_app() -> FastAPI:
     app.include_router(columns.router, prefix="/api")
     app.include_router(tags.router, prefix="/api")
     app.include_router(todos.router, prefix="/api")
+    app.include_router(recurrence.router, prefix="/api")
 
     # Serve the React SPA when the build artefact is present.
     # Non-editable installs (Docker): frontend is bundled inside the package.

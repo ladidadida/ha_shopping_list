@@ -11,6 +11,7 @@ from sqlmodel import Session, select
 from ..models.column import ColumnDB
 from ..models.todo import TodoCreate, TodoDB, TodoUpdate
 from ..models.todo_tag import TodoTagDB
+from . import recurrence
 
 
 def _utcnow() -> datetime:
@@ -53,6 +54,8 @@ def list_todos(
 
 def create_todo(session: Session, data: TodoCreate) -> TodoDB:
     todo = TodoDB.model_validate(data)
+    if todo.rrule is not None:
+        todo.next_due = recurrence.first_due_date(todo.rrule, date.today())
     session.add(todo)
     session.commit()
     _set_tag_ids(session, todo.id, data.tag_ids)
@@ -71,6 +74,8 @@ def update_todo(session: Session, todo_id: uuid.UUID, data: TodoUpdate) -> TodoD
         return None
     patch = data.model_dump(exclude_unset=True, exclude={"tag_ids"})
     todo.sqlmodel_update(patch)
+    if "rrule" in patch:
+        todo.next_due = recurrence.first_due_date(todo.rrule, date.today()) if todo.rrule else None
     todo.updated_at = _utcnow()
     session.add(todo)
     if data.tag_ids is not None:
@@ -103,6 +108,11 @@ def complete_todo(session: Session, todo_id: uuid.UUID) -> TodoDB | CompleteResu
     todo.column_id = terminal_column.id
     todo.updated_at = _utcnow()
     session.add(todo)
-    session.commit()
+    if todo.recurrence_parent_id is None and todo.rrule is not None:
+        # Root recurring todo: spawn the next occurrence right away, regardless of
+        # next_due (the periodic/manual sweep is what's date-gated, see recurrence.py).
+        recurrence.materialize_one(session, todo)
+    else:
+        session.commit()
     session.refresh(todo)
     return todo

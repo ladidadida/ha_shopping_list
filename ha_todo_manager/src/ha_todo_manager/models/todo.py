@@ -1,8 +1,7 @@
 """Todo DB table model and request/response schemas.
 
-Phase 1 scope only: no assignee (Phase 3, needs Person), no recurrence fields
-(Phase 2), no source/source_ref (Phase 3, webhook-created todos) — see
-spec/roadmap.md.
+Phase 1 scope: no assignee, no source/source_ref (Phase 3, needs Person/webhook).
+Phase 2 adds `rrule`/`next_due`/`recurrence_parent_id` — see spec/roadmap.md.
 """
 
 from __future__ import annotations
@@ -25,6 +24,7 @@ class TodoBase(SQLModel):
     due_date: date | None = None
     priority: int = Field(default=0, ge=0, le=3)
     position: int = 0
+    rrule: str | None = None
 
 
 class TodoDB(TodoBase, table=True):
@@ -33,6 +33,9 @@ class TodoDB(TodoBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime = Field(default_factory=_utcnow)
     updated_at: datetime = Field(default_factory=_utcnow)
+    # Server-managed recurrence bookkeeping — not user-settable directly.
+    next_due: date | None = None
+    recurrence_parent_id: uuid.UUID | None = Field(default=None, foreign_key="todo.id")
 
 
 class TodoCreate(TodoBase):
@@ -46,6 +49,7 @@ class TodoUpdate(SQLModel):
     due_date: date | None = None
     priority: int | None = Field(default=None, ge=0, le=3)
     position: int | None = None
+    rrule: str | None = None
     tag_ids: list[uuid.UUID] | None = None
 
 
@@ -53,4 +57,6 @@ class TodoRead(TodoBase):
     id: uuid.UUID
     created_at: datetime
     updated_at: datetime
+    next_due: date | None
+    recurrence_parent_id: uuid.UUID | None
     tag_ids: list[uuid.UUID]
