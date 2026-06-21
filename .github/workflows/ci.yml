@@ -9,6 +9,12 @@ env:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        addon: [ha_shopping_list]
+    defaults:
+      run:
+        working-directory: ${{ matrix.addon }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -23,6 +29,12 @@ jobs:
       run: $BAM_TOOL lint
   format-check:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        addon: [ha_shopping_list]
+    defaults:
+      run:
+        working-directory: ${{ matrix.addon }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -37,6 +49,12 @@ jobs:
       run: $BAM_TOOL format-check
   typecheck:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        addon: [ha_shopping_list]
+    defaults:
+      run:
+        working-directory: ${{ matrix.addon }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -51,6 +69,12 @@ jobs:
       run: $BAM_TOOL typecheck
   test-unit:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        addon: [ha_shopping_list]
+    defaults:
+      run:
+        working-directory: ${{ matrix.addon }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -65,6 +89,12 @@ jobs:
       run: $BAM_TOOL test-unit
   test-integration:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        addon: [ha_shopping_list]
+    defaults:
+      run:
+        working-directory: ${{ matrix.addon }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -79,6 +109,12 @@ jobs:
       run: $BAM_TOOL test-integration
   test-component:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        addon: [ha_shopping_list]
+    defaults:
+      run:
+        working-directory: ${{ matrix.addon }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -99,6 +135,12 @@ jobs:
     - test-unit
     - test-integration
     - test-component
+    strategy:
+      matrix:
+        addon: [ha_shopping_list]
+    defaults:
+      run:
+        working-directory: ${{ matrix.addon }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5

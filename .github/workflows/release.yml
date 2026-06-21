@@ -3,24 +3,53 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - '*-v*'
 
 permissions:
   contents: write
   packages: write
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      slug: ${{ steps.parse.outputs.slug }}
+      version: ${{ steps.parse.outputs.version }}
+      build_from_amd64: ${{ steps.build_from.outputs.amd64 }}
+      build_from_aarch64: ${{ steps.build_from.outputs.aarch64 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse add-on slug and version from tag
+        id: parse
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          SLUG="${TAG%-v*}"
+          VERSION="${TAG##*-v}"
+          echo "slug=${SLUG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Read build_from images from the add-on's build.yaml
+        id: build_from
+        run: |
+          AMD64=$(yq '.build_from.amd64' "${{ steps.parse.outputs.slug }}/build.yaml")
+          AARCH64=$(yq '.build_from.aarch64' "${{ steps.parse.outputs.slug }}/build.yaml")
+          echo "amd64=${AMD64}" >> "$GITHUB_OUTPUT"
+          echo "aarch64=${AARCH64}" >> "$GITHUB_OUTPUT"
+
   build-and-push:
+    needs: prepare
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - arch: amd64
             platform: linux/amd64
-            build_from: ghcr.io/home-assistant/amd64-base-python:3.13-alpine3.22
+            build_from: ${{ needs.prepare.outputs.build_from_amd64 }}
           - arch: aarch64
             platform: linux/arm64
-            build_from: ghcr.io/home-assistant/aarch64-base-python:3.13-alpine3.22
+            build_from: ${{ needs.prepare.outputs.build_from_aarch64 }}
 
     steps:
       - name: Checkout
@@ -41,27 +70,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
-
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: ${{ needs.prepare.outputs.slug }}/Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
           build-args: |
             BUILD_FROM=${{ matrix.build_from }}
-            BUILD_VERSION=${{ steps.version.outputs.version }}
+            BUILD_VERSION=${{ needs.prepare.outputs.version }}
           tags: |
-            ghcr.io/ladidadida/ha_shopping_list/${{ matrix.arch }}:${{ steps.version.outputs.version }}
-            ghcr.io/ladidadida/ha_shopping_list/${{ matrix.arch }}:latest
-          cache-from: type=gha,scope=${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
+            ghcr.io/ladidadida/${{ needs.prepare.outputs.slug }}/${{ matrix.arch }}:${{ needs.prepare.outputs.version }}
+            ghcr.io/ladidadida/${{ needs.prepare.outputs.slug }}/${{ matrix.arch }}:latest
+          cache-from: type=gha,scope=${{ needs.prepare.outputs.slug }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ needs.prepare.outputs.slug }}-${{ matrix.arch }}
 
   sync-version:
-    needs: build-and-push
+    needs: [prepare, build-and-push]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main
@@ -70,21 +96,18 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
-
       - name: Update config.yaml version
         run: |
-          sed -i "s/^version: .*/version: \"${{ steps.version.outputs.version }}\"/" config.yaml
+          sed -i "s/^version: .*/version: \"${{ needs.prepare.outputs.version }}\"/" "${{ needs.prepare.outputs.slug }}/config.yaml"
 
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet config.yaml; then
-            git add config.yaml
-            git commit -m "chore: sync config.yaml to v${{ steps.version.outputs.version }}"
+          FILE="${{ needs.prepare.outputs.slug }}/config.yaml"
+          if ! git diff --quiet "$FILE"; then
+            git add "$FILE"
+            git commit -m "chore: sync ${{ needs.prepare.outputs.slug }} config.yaml to v${{ needs.prepare.outputs.version }}"
             git push origin main
           else
             echo "config.yaml already up to date"

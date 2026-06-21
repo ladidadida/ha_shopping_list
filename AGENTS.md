@@ -4,21 +4,62 @@ This file describes conventions, commands, and constraints for AI agents working
 
 ## Project Summary
 
-`ha-shopping-list` is a Home Assistant Add-on: a self-hosted shopping list manager with a FastAPI backend, a React frontend (served as static files), and SQLite persistence. It is deployed via HA Ingress, with no exposed external port.
+This is a **multi-add-on Home Assistant repository** (`repository.yaml` at root, no
+root-level `config.yaml`). Each add-on lives in its own self-contained subdirectory.
+
+Currently the only add-on is `ha_shopping_list/`: a self-hosted shopping list manager
+with a FastAPI backend, a React frontend (served as static files), and SQLite
+persistence. It is deployed via HA Ingress, with no exposed external port.
 
 ## Repository Layout
 
 ```
-src/ha_shopping_list/   # Python package (FastAPI app, models, CLI entrypoint)
-tests/
-  unit/                 # Pure unit tests (no I/O, no DB)
-  integration/          # Tests against in-process app with a real (tmp) SQLite DB
-  component/            # End-to-end CLI / HTTP tests
-spec/                   # Architecture and roadmap documents
-frontend/               # React (Vite) source – compiled artefacts are NOT committed
-  dist/                 # Build output (git-ignored), served by FastAPI at runtime
-ha-addon/               # HA add-on metadata: config.yaml, build.yaml, run.sh, Dockerfile
+repository.yaml          # Repo-level metadata for the HA add-on store
+README.md                # Repo overview, lists all add-ons
+AGENTS.md                # This file
+
+ha_shopping_list/        # One add-on = one self-contained subdirectory.
+                          # Directory name MUST equal the `slug:` in its config.yaml.
+  config.yaml             # HA add-on metadata (version is auto-synced by release.yml, don't hand-edit)
+  build.yaml              # Per-arch base images, read dynamically by release.yml
+  Dockerfile              # Build context is always the REPO ROOT, not this directory
+                          # (so .git/ stays reachable for hatch-vcs – see pyproject.toml)
+  run.sh
+  DOCS.md                 # Shown by the HA add-on store for this add-on
+  icon.png / logo.png
+  pyproject.toml          # `[tool.hatch.version.raw-options] root = ".."` – do not remove
+  uv.lock
+  bam.yaml
+  src/ha_shopping_list/   # Python package (FastAPI app, models, CLI entrypoint)
+  tests/
+    unit/                 # Pure unit tests (no I/O, no DB)
+    integration/          # Tests against in-process app with a real (tmp) SQLite DB
+    component/            # End-to-end CLI / HTTP tests
+  spec/                   # Architecture and roadmap documents
+  frontend/               # React (Vite) source – compiled artefacts are NOT committed
+    dist/                 # Build output (git-ignored), served by FastAPI at runtime
+
+.github/workflows/
+  ci.yml                  # Lint/test/build per add-on, via an explicit matrix
+  release.yml             # Tag-driven release pipeline, generic across all add-ons
 ```
+
+### Adding a new add-on
+
+1. Create a new subdirectory named exactly like the add-on's `slug:`, with the same
+   internal layout as `ha_shopping_list/` (own `config.yaml`, `build.yaml`, `Dockerfile`,
+   `pyproject.toml`/`bam.yaml` if it's a Python app, etc.). Add-ons are fully independent –
+   they don't have to share a tech stack.
+2. In the new `pyproject.toml`, set `[tool.hatch.version.raw-options] root = ".."` if using
+   `hatch-vcs` (mirrors how `ha_shopping_list` resolves its version from git tags).
+3. Add one entry to the `addon:` matrix list in **every job** of
+   `.github/workflows/ci.yml` (e.g. `addon: [ha_shopping_list, new_addon_slug]`).
+4. Releases use the tag scheme `<slug>-v<version>` (e.g. `new_addon_slug-v0.1.0`).
+   `release.yml` derives everything else (image name, base images, `config.yaml` sync)
+   from the tag – no workflow changes needed.
+5. `bam --ci` regenerates a *single-project* workflow and would overwrite the multi-add-on
+   matrix in `ci.yml` if run against this repo – do not run it here. `ci.yml` and
+   `release.yml` are hand-maintained.
 
 ## Tech Stack
 
@@ -35,6 +76,8 @@ ha-addon/               # HA add-on metadata: config.yaml, build.yaml, run.sh, D
 | Test runner | `pytest` |
 
 ## Development Commands
+
+All commands below are run from inside the add-on's directory, e.g. `cd ha_shopping_list`.
 
 ```bash
 # Install all dependencies (including dev)
