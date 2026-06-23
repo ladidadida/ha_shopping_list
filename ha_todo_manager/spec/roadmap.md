@@ -229,8 +229,10 @@ without console errors on a mobile viewport.
 
 ## Phase 5 – HA Add-on Polish 🔄
 
-- [x] Real icon/logo artwork — `icon.png` (128×128) and `logo.png` (250×100) were
-      already added in the initial scaffold commit (`83014d4`), not placeholders.
+- [x] Real icon/logo artwork — redesigned `icon.png` (128×128) and `logo.png`
+      (250×100) with a checkbox-and-check glyph on an indigo gradient, matching
+      `ha_shopping_list`'s rounded-square convention; `logo.png` now also carries the
+      "Todo Manager" wordmark next to the icon, like the sibling add-on's logo.
 - [x] `DOCS.md` rewritten with actual installation/usage instructions, replacing the
       pre-release placeholder.
 - [ ] Manual smoke-test on a real HA instance (amd64 + aarch64)
