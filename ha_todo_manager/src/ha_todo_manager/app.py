@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
+import stat
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -67,9 +69,16 @@ class _IngressPathMiddleware(BaseHTTPMiddleware):
         return HTMLResponse(content=patched.decode(), status_code=response.status_code)
 
 
+def _ensure_db_permissions() -> None:
+    db_path = str(get_settings().db_path)
+    if os.path.exists(db_path):
+        os.chmod(db_path, stat.S_IRUSR | stat.S_IWUSR)
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncGenerator[None]:
     create_db_and_tables()
+    _ensure_db_permissions()
     with Session(get_engine()) as session:
         boards_svc.ensure_default_board(session)
         webhook_secret.get_effective_secret(session)  # ensure it exists from first start

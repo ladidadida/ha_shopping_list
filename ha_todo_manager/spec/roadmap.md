@@ -227,12 +227,14 @@ without console errors on a mobile viewport.
 
 ---
 
-## Phase 5 – HA Add-on Polish ⬜
+## Phase 5 – HA Add-on Polish 🔄
 
 - [ ] Real icon/logo artwork
 - [ ] `DOCS.md` rewritten with actual installation/usage instructions
 - [ ] Manual smoke-test on a real HA instance (amd64 + aarch64)
-- [ ] `600` permissions on `/data/todo.db`, matching `ha_shopping_list`'s convention
+- [x] `600` permissions on `/data/todo.db`, matching `ha_shopping_list`'s convention
+      (`_ensure_db_permissions()` in `app.py`'s lifespan, same pattern as
+      `ha_shopping_list/app.py:164-167`).
 
 ---
 
