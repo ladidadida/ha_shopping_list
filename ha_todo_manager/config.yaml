@@ -15,6 +15,7 @@ ingress_port: 8100
 panel_icon: mdi:checkbox-marked-outline
 panel_title: Todo Manager
 panel_admin: false
+hassio_api: true
 homeassistant_api: true
 
 startup: application
