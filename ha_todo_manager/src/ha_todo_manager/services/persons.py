@@ -38,6 +38,31 @@ def delete_person(session: Session, person_id: uuid.UUID) -> bool:
     return True
 
 
+def claim_person(session: Session, person_id: uuid.UUID, ha_user_id: str) -> PersonDB | None:
+    """Bind an HA user id to an existing person (e.g. a manually-created one), so the
+    `mine` filter resolves to them instead of an auto-created stub. Steals the
+    ha_user_id from whichever other person currently holds it, since it's unique.
+    """
+    person = session.get(PersonDB, person_id)
+    if person is None:
+        return None
+    previous_holder = session.exec(
+        select(PersonDB).where(PersonDB.ha_user_id == ha_user_id)
+    ).first()
+    if previous_holder is not None and previous_holder.id != person_id:
+        previous_holder.ha_user_id = None
+        session.add(previous_holder)
+        # Flush the steal before claiming below — otherwise the two UPDATEs land in
+        # the same flush with unit-of-work's ordering not guaranteed, and the unique
+        # constraint can transiently reject whichever one happens to run first.
+        session.flush()
+    person.ha_user_id = ha_user_id
+    session.add(person)
+    session.commit()
+    session.refresh(person)
+    return person
+
+
 def get_or_create_by_ha_user_id(session: Session, ha_user_id: str) -> PersonDB:
     person = session.exec(select(PersonDB).where(PersonDB.ha_user_id == ha_user_id)).first()
     if person is not None:

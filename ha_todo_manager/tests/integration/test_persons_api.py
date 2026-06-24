@@ -111,6 +111,43 @@ def test_delete_person_not_found(client: TestClient) -> None:
 
 
 @pytest.mark.integration
+def test_claim_person_binds_ha_user_id(client: TestClient) -> None:
+    person_id = client.post("/api/persons", json={"display_name": "Guest"}).json()["id"]
+
+    response = client.post(f"/api/persons/{person_id}/claim", headers={"X-Ingress-User": "user-1"})
+    assert response.status_code == 200
+    assert response.json()["ha_user_id"] == "user-1"
+
+
+@pytest.mark.integration
+def test_claim_person_without_ingress_header_rejected(client: TestClient) -> None:
+    person_id = client.post("/api/persons", json={"display_name": "Guest"}).json()["id"]
+    response = client.post(f"/api/persons/{person_id}/claim")
+    assert response.status_code == 422
+
+
+@pytest.mark.integration
+def test_claim_person_not_found(client: TestClient) -> None:
+    response = client.post(
+        "/api/persons/00000000-0000-0000-0000-000000000000/claim",
+        headers={"X-Ingress-User": "user-1"},
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.integration
+def test_claim_person_steals_ha_user_id_from_previous_holder(client: TestClient) -> None:
+    client.get("/api/todos", headers={"X-Ingress-User": "user-1"})
+    stub_id = client.get("/api/persons").json()[0]["id"]
+
+    manual_id = client.post("/api/persons", json={"display_name": "Real Name"}).json()["id"]
+    client.post(f"/api/persons/{manual_id}/claim", headers={"X-Ingress-User": "user-1"})
+
+    stub = next(p for p in client.get("/api/persons").json() if p["id"] == stub_id)
+    assert stub["ha_user_id"] is None
+
+
+@pytest.mark.integration
 def test_delete_person_unassigns_todos(client: TestClient) -> None:
     person_id = client.post("/api/persons", json={"display_name": "Assignee"}).json()["id"]
     column_id = client.get("/api/columns").json()[0]["id"]

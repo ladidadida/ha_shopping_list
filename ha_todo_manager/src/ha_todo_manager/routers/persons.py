@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlmodel import Session
 
 from .. import ha_client
@@ -30,6 +30,22 @@ def post_person(data: PersonCreate, session: Session = Depends(get_session)) -> 
 def delete_person(person_id: uuid.UUID, session: Session = Depends(get_session)) -> None:
     if not svc.delete_person(session, person_id):
         raise HTTPException(status_code=404, detail="Person not found")
+
+
+@router.post("/{person_id}/claim", response_model=PersonRead)
+def post_claim(
+    person_id: uuid.UUID,
+    session: Session = Depends(get_session),
+    x_ingress_user: str | None = Header(default=None, alias="X-Ingress-User"),
+) -> PersonRead:
+    """Bind the requesting HA user to an existing person, fixing up the `mine` filter
+    for persons created manually (no HA account to sync from)."""
+    if not x_ingress_user:
+        raise HTTPException(status_code=422, detail="No X-Ingress-User header on this request")
+    person = svc.claim_person(session, person_id, x_ingress_user)
+    if person is None:
+        raise HTTPException(status_code=404, detail="Person not found")
+    return person  # type: ignore[return-value]
 
 
 @router.post("/sync")

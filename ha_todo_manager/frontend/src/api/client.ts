@@ -148,6 +148,8 @@ export const createPerson = (data: PersonCreate) =>
 
 export const deletePerson = (id: string) => request<void>(`/persons/${id}`, { method: 'DELETE' })
 
+export const claimPerson = (id: string) => request<Person>(`/persons/${id}/claim`, { method: 'POST' })
+
 export const syncPersons = () => request<{ synced: number }>('/persons/sync', { method: 'POST' })
 
 // ─── Webhook ──────────────────────────────────────────────────────────────────

@@ -1,11 +1,18 @@
 import { useState } from 'react'
-import { useCreatePerson, useDeletePerson, usePersons, useSyncPersons } from '../hooks/usePersons'
+import {
+  useClaimPerson,
+  useCreatePerson,
+  useDeletePerson,
+  usePersons,
+  useSyncPersons,
+} from '../hooks/usePersons'
 
 export default function PersonsPanel() {
   const { data: persons = [] } = usePersons()
   const sync = useSyncPersons()
   const createPerson = useCreatePerson()
   const deletePerson = useDeletePerson()
+  const claimPerson = useClaimPerson()
   const [name, setName] = useState('')
 
   function handleCreate(e: React.FormEvent) {
@@ -32,6 +39,11 @@ export default function PersonsPanel() {
           Sync fehlgeschlagen — Home Assistant Supervisor nicht erreichbar?
         </p>
       )}
+      {claimPerson.isError && (
+        <p className="text-xs text-red-500">
+          Fehlgeschlagen — kein Home Assistant Ingress-Kontext erkannt?
+        </p>
+      )}
       {persons.length === 0 ? (
         <p className="text-xs text-gray-400">Noch keine Personen.</p>
       ) : (
@@ -44,6 +56,16 @@ export default function PersonsPanel() {
               <span className="flex-1">{p.display_name}</span>
               {!p.ha_user_id && !p.ha_person_entity_id && (
                 <span className="text-[10px] text-gray-400">manuell</span>
+              )}
+              {!p.ha_user_id && (
+                <button
+                  onClick={() => claimPerson.mutate(p.id)}
+                  disabled={claimPerson.isPending}
+                  aria-label={`${p.display_name} als mich markieren`}
+                  className="opacity-0 group-hover:opacity-100 text-[10px] text-gray-400 hover:text-indigo-500 transition-opacity px-1 rounded disabled:opacity-50"
+                >
+                  Das bin ich
+                </button>
               )}
               <button
                 onClick={() => deletePerson.mutate(p.id)}

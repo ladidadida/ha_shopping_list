@@ -150,6 +150,25 @@ container catches up on overdue recurrences on startup.
   design, requested by the user so household members without an HA account can be
   assigned todos too.
 
+- **`POST /api/persons/{id}/claim` added.** On the user's real HA instance, person
+  sync never worked — Supervisor consistently rejected this add-on's own token
+  (`Invalid token for access /addons/self/options/config`, `supervisor.api.middleware.security`)
+  even after granting `hassio_api`/`homeassistant_api`, across reinstalls, reboots,
+  and a from-scratch slug rename. Sibling add-on `ha_shopping_list` is unaffected;
+  root cause not found (looks like a genuine Supervisor bug, not a manifest issue —
+  worth filing upstream with the gathered repro). Manually-created persons have no
+  `ha_user_id`, so without sync the "mine" filter could never resolve to them — it'd
+  just keep auto-creating an invisible stub under the raw HA user id instead. The
+  claim endpoint lets a person "claim" the current HA user id directly (stealing it
+  from whichever person — usually that stub — currently holds it, since it's unique),
+  fixing the `mine` filter independently of whether sync ever works. UI: "Das bin
+  ich" button in `PersonsPanel`, shown for persons without `ha_user_id`.
+  **Bug found while testing this (not by manual check — a flaky integration test):**
+  `claim_person`'s steal-then-claim is two `UPDATE`s in one flush; SQLAlchemy doesn't
+  guarantee their order, so the unique constraint on `ha_user_id` could transiently
+  reject whichever ran first, depending on hash-seed-dependent flush ordering. Fixed
+  with an explicit `session.flush()` between the two.
+
 **Exit criteria:** An HA automation can create and complete todos via the webhook; the
 "my tasks" filter resolves the logged-in HA user to a `Person`.
 

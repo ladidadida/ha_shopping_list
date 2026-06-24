@@ -1,5 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createPerson, deletePerson, fetchPersons, syncPersons, type PersonCreate } from '../api/client'
+import {
+  claimPerson,
+  createPerson,
+  deletePerson,
+  fetchPersons,
+  syncPersons,
+  type PersonCreate,
+} from '../api/client'
 
 export const PERSONS_KEY = ['persons'] as const
 
@@ -27,6 +34,14 @@ export function useDeletePerson() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deletePerson(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: PERSONS_KEY }),
+  })
+}
+
+export function useClaimPerson() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => claimPerson(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: PERSONS_KEY }),
   })
 }
